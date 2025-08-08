@@ -1,35 +1,39 @@
 import streamlit as st
 import pandas as pd
-import joblib
-from sklearn.preprocessing import LabelEncoder, StandardScaler
 import numpy as np
+import joblib
 from datetime import datetime
 
-# Configuración
+# Configurar la página
 st.set_page_config(page_title="Predicción de Papa", layout="wide")
 
-# Leer modelos
+# Cargar modelos y scaler
 @st.cache_resource
 def cargar_modelos():
-    return joblib.load("modelo_xgboost.pkl"), joblib.load("modelo_lightgbm.pkl")
+    modelo_xgb = joblib.load("modelo_xgboost.pkl")
+    modelo_lgb = joblib.load("modelo_lightgbm.pkl")
+    scaler = joblib.load("scaler.pkl")
+    return modelo_xgb, modelo_lgb, scaler
 
-modelo_xgb, modelo_lgb = cargar_modelos()
+modelo_xgb, modelo_lgb, scaler = cargar_modelos()
 
-# Crear pestañas
-pagina = st.sidebar.radio("Selecciona una opción", ["📈 Predicción", "📋 Historial"])
+# Pestañas (menú lateral)
+pagina = st.sidebar.radio("Navegación", ["📈 Predicción", "📋 Historial"])
 
-# ------------------ PREDICCIÓN ------------------
+# ----------------------------------
+# Página 1: Predicción manual
+# ----------------------------------
 if pagina == "📈 Predicción":
     st.title("🌱 Predicción de Rendimiento de Cultivo de Papa")
 
     st.subheader("👤 Datos del Usuario")
     nombre = st.text_input("Nombre del Usuario")
     fecha = st.date_input("Fecha del Registro", value=datetime.today())
-    ubicacion = st.text_input("Ubicación")
+    ubicacion = st.text_input("Ubicación o Región")
 
     st.subheader("🧪 Parámetros del Cultivo")
 
-    # Opciones fijas
+    # Opciones categóricas
     opciones_variedad = ['Desiree', 'Yungay', 'Canchan', 'Única', 'Perricholi']
     opciones_textura = ['Franco', 'Franco-arenoso', 'Franco-arcilloso']
     opciones_fertilizante = ['Sí', 'No']
@@ -53,26 +57,30 @@ if pagina == "📈 Predicción":
         materia = st.slider("Materia Orgánica (%)", 0.5, 5.0, 3.0)
         dosis = st.slider("Dosis Fertilizante (kg/ha)", 0, 300, 180)
 
-    if st.button("🔍 Predecir"):
-        def codificar(v, lista): return lista.index(v)
-        entrada = pd.DataFrame([[
-            codificar(variedad, opciones_variedad),
-            codificar(textura, opciones_textura),
-            codificar(fertilizante, opciones_fertilizante),
-            codificar(riego, opciones_riego),
-            codificar(plagas, opciones_plagas),
-            duracion, altitud, temperatura, precipitacion,
-            ph, materia, dosis
-        ]], columns=[
+    if st.button("🔍 Predecir rendimiento"):
+        columnas_modelo = [
             'Variedad', 'Textura_Suelo', 'Uso_Fertilizante', 'Riego', 'Plagas',
             'Duración_Días', 'Altitud_msnm', 'Temperatura_Media_C',
             'Precipitación_mm', 'pH_Suelo', 'Materia_Orgánica_%', 'Dosis_Fertilizante_kg_ha'
-        ])
+        ]
 
-        # Escalado
-        scaler = joblib.load("scaler.pkl")
-        entrada_scaled = scaler.transform(entrada)
+        valores = [[
+            opciones_variedad.index(variedad),
+            opciones_textura.index(textura),
+            opciones_fertilizante.index(fertilizante),
+            opciones_riego.index(riego),
+            opciones_plagas.index(plagas),
+            duracion,
+            altitud,
+            temperatura,
+            precipitacion,
+            ph,
+            materia,
+            dosis
+        ]]
 
+        entrada_df = pd.DataFrame(valores, columns=columnas_modelo)
+        entrada_scaled = scaler.transform(entrada_df)
 
         # Predicciones
         pred_xgb = modelo_xgb.predict(entrada_scaled)[0]
@@ -81,7 +89,7 @@ if pagina == "📈 Predicción":
         st.success(f"📈 Predicción XGBoost: **{pred_xgb:.2f} t/ha**")
         st.success(f"📈 Predicción LightGBM: **{pred_lgb:.2f} t/ha**")
 
-        # Guardar en historial CSV
+        # Guardar en historial
         fila = {
             "Nombre": nombre,
             "Fecha": fecha,
@@ -109,12 +117,13 @@ if pagina == "📈 Predicción":
 
         historial = pd.concat([historial, pd.DataFrame([fila])], ignore_index=True)
         historial.to_csv("historial_predicciones.csv", index=False)
-        st.success("✅ Registro guardado en historial")
+        st.success("✅ Registro guardado en historial.")
 
-# ------------------ HISTORIAL ------------------
+# ----------------------------------
+# Página 2: Historial
+# ----------------------------------
 elif pagina == "📋 Historial":
-    st.title("📋 Historial de Predicciones")
-
+    st.title("📋 Historial de Predicciones Registradas")
     try:
         historial = pd.read_csv("historial_predicciones.csv")
         st.dataframe(historial)
