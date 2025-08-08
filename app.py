@@ -70,8 +70,9 @@ if pagina == "📈 Predicción":
         ])
 
         # Escalado
-        scaler = StandardScaler()
-        entrada_scaled = scaler.fit_transform(entrada)
+        scaler = joblib.load("scaler.pkl")
+        entrada_scaled = scaler.transform(entrada)
+
 
         # Predicciones
         pred_xgb = modelo_xgb.predict(entrada_scaled)[0]
