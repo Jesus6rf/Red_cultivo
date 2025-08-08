@@ -58,12 +58,7 @@ if pagina == "📈 Predicción":
         dosis = st.slider("Dosis Fertilizante (kg/ha)", 0, 300, 180)
 
     if st.button("🔍 Predecir rendimiento"):
-        columnas_modelo = [
-            'Variedad', 'Textura_Suelo', 'Uso_Fertilizante', 'Riego', 'Plagas',
-            'Duración_Días', 'Altitud_msnm', 'Temperatura_Media_C',
-            'Precipitación_mm', 'pH_Suelo', 'Materia_Orgánica_%', 'Dosis_Fertilizante_kg_ha'
-        ]
-
+        # Convertir a índices
         valores = [[
             opciones_variedad.index(variedad),
             opciones_textura.index(textura),
@@ -79,8 +74,9 @@ if pagina == "📈 Predicción":
             dosis
         ]]
 
-        entrada_df = pd.DataFrame(valores, columns=columnas_modelo)
-        entrada_scaled = scaler.transform(entrada_df)
+        # Convertir a array y escalar sin columnas
+        entrada_np = np.array(valores)
+        entrada_scaled = scaler.transform(entrada_np)
 
         # Predicciones
         pred_xgb = modelo_xgb.predict(entrada_scaled)[0]
