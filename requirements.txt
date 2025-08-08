@@ -1,1 +1,6 @@
+streamlit
+pandas
+scikit-learn
+xgboost
+lightgbm
 
