@@ -65,13 +65,7 @@ if pagina == "📈 Predicción":
             opciones_fertilizante.index(fertilizante),
             opciones_riego.index(riego),
             opciones_plagas.index(plagas),
-            duracion,
-            altitud,
-            temperatura,
-            precipitacion,
-            ph,
-            materia,
-            dosis
+            duracion, altitud, temperatura, precipitacion, ph, materia, dosis
         ]]
 
         # Convertir a array y escalar sin columnas
@@ -87,21 +81,12 @@ if pagina == "📈 Predicción":
 
         # Guardar en historial
         fila = {
-            "Nombre": nombre,
-            "Fecha": fecha,
-            "Ubicación": ubicacion,
-            "Variedad": variedad,
-            "Textura_Suelo": textura,
-            "Uso_Fertilizante": fertilizante,
-            "Riego": riego,
-            "Plagas": plagas,
-            "Duración_Días": duracion,
-            "Altitud_msnm": altitud,
-            "Temperatura_Media_C": temperatura,
-            "Precipitación_mm": precipitacion,
-            "pH_Suelo": ph,
-            "Materia_Orgánica_%": materia,
-            "Dosis_Fertilizante_kg_ha": dosis,
+            "Nombre": nombre, "Fecha": fecha, "Ubicación": ubicacion,
+            "Variedad": variedad, "Textura_Suelo": textura, "Uso_Fertilizante": fertilizante,
+            "Riego": riego, "Plagas": plagas, "Duración_Días": duracion,
+            "Altitud_msnm": altitud, "Temperatura_Media_C": temperatura,
+            "Precipitación_mm": precipitacion, "pH_Suelo": ph,
+            "Materia_Orgánica_%": materia, "Dosis_Fertilizante_kg_ha": dosis,
             "Rendimiento_XGBoost": round(pred_xgb, 2),
             "Rendimiento_LightGBM": round(pred_lgb, 2)
         }
@@ -115,6 +100,14 @@ if pagina == "📈 Predicción":
         historial.to_csv("historial_predicciones.csv", index=False)
         st.success("✅ Registro guardado en historial.")
 
+        # ⬇️ Botón para descargar el historial ACTUALIZADO
+        st.download_button(
+            label="📥 Descargar historial actualizado (CSV)",
+            data=historial.to_csv(index=False).encode("utf-8"),
+            file_name="historial_predicciones.csv",
+            mime="text/csv"
+        )
+
 # ----------------------------------
 # Página 2: Historial
 # ----------------------------------
@@ -122,6 +115,14 @@ elif pagina == "📋 Historial":
     st.title("📋 Historial de Predicciones Registradas")
     try:
         historial = pd.read_csv("historial_predicciones.csv")
-        st.dataframe(historial)
+        st.dataframe(historial, use_container_width=True)
+
+        # ⬇️ Botón de descarga desde la pestaña de historial
+        st.download_button(
+            label="📥 Descargar historial (CSV)",
+            data=historial.to_csv(index=False).encode("utf-8"),
+            file_name="historial_predicciones.csv",
+            mime="text/csv"
+        )
     except FileNotFoundError:
         st.warning("⚠️ No hay registros aún. Realiza una predicción primero.")
